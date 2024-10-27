@@ -1,0 +1,12 @@
+name: uwtimescheduleViz
+title: uwtimescheduleViz
+username: ben-marwick
+account: ben-marwick
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13143446
+bundleId: 9275302
+url: https://ben-marwick.shinyapps.io/uwtimescheduleViz/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
