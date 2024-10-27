@@ -148,7 +148,7 @@ sitedata_df <-
   # undergrad only
   filter(course_number <= 499) %>% 
   # drop independent study
-  filter(!course_number %in% c(299, 499)) %>% 
+  filter(!course_number %in% c(199, 299, 399, 499)) %>% 
   # course level
   mutate(level = case_when(
     between(course_number, 100, 199) ~ "100-level classes",

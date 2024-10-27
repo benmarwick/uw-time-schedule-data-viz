@@ -16,11 +16,25 @@ ui <- page_fluid(
 
   navset_tab( 
   nav_panel("Start here", helpText(
-    "Create plots of student enrollment over time for a course prefix. Choose a course prefix and a date range, and then click on one of the plot tabs at the top. It make take 10 or more seconds for the plots to appear. "
-  ),
+    tags$h1("Create plots of undergrad student enrollment over time for a UW course prefix"),
+    hr(),
+    tags$p(
+      "Choose a course prefix and a date range, and then click on the button below to scrape the ",
+      tags$a("UW Time Schedule web pages", 
+      href = "https://www.washington.edu/students/timeschd/"),". Then click the tabs along the 
+      top to view the results. It make take a few seconds for the plots to appear. Course 
+      codes ending in 99 and 69 are omitted. Data are scraped from the UW Time Schedule 
+      web pages when you click on the button below, that scraping may take several seconds. This is a 
+      very simple application I developed to assist with course planning in my department, 
+      and may not work or be useful for other departments. The source code for this app is 
+      freely available at",
+      tags$a("https://github.com/benmarwick/uw-time-schedule-data-viz", 
+      href = "https://github.com/benmarwick/uw-time-schedule-data-viz"),"."
+  )),
+  hr(),
   selectInput(
     inputId = "selected_prefix",
-    label = h3("Choose a prefix"),
+    label = h3("Choose a prefix:"),
     choices = 
       setNames(as.list(preparation_output$prefixes), 
                preparation_output$txt)
@@ -32,27 +46,19 @@ ui <- page_fluid(
                  end = Sys.Date(), 
                  min = NULL, 
                  max = NULL,
-                 label = h3("Date range"))
-  
+                 label = h3("Choose a range of years:")),
+  actionButton("generate_plots", 
+               "Click here to scrape the data from the UW Time Schedule webpages, then click on the tabs above to see the plots")
   ), 
-  nav_panel("Plot of student numbers",   
+  nav_panel("Plots of student numbers over time",   
             plotOutput("plot1",
                        height = "1000px")), 
-  nav_panel("Plot of ratio to capacity", 
+  nav_panel("Plots of ratio to capacity over time", 
             plotOutput("plot2",
                        height = "1000px")), 
-  nav_panel("Plot by course", 
+  nav_panel("Plots by course", 
             plotOutput("plot3",
                        height = "1000px")), 
-  nav_menu( 
-    "Other links", 
-    nav_panel("D", "Panel D content"), 
-    "----", 
-    "Description:", 
-    nav_item( 
-      a("Time Schedule Home", href = "https://www.washington.edu/students/timeschd/", target = "_blank") 
-    ), 
-  ), 
 ), 
 id = "tab" 
 )
@@ -61,43 +67,49 @@ id = "tab"
 
 server <- function(input, output) {
   
-  output$selected_prefix <- renderText({
-    paste("You have selected", input$selected_prefix, 
-          "for the period ",   
-          year(input$date[1]), " to ",
-          year(input$date[2]))
-          
-  })
+  # Reactive value to hold plot data
+  plot_data <- reactiveVal(NULL)  # Initialize to NULL
+  
+  observeEvent(input$generate_plots, {
+    # Show a modal when the button is clicked
+    showModal(modalDialog(
+      title = "Collecting data and generating plots...",
+      "Please wait for this message to automatically close, then view the plots using the tabs at the top of the page.",
+      easyClose = FALSE,  # Prevent modal from closing automatically
+      footer = NULL
+    ))
+    
+     # Generate plot data here
+     scrape_time_schedule_fn(
+        current_time_schedule_tbl_urls = preparation_output, 
+        prefix = input$selected_prefix,
+        start_year = as.numeric(year(input$date[[1]])),
+        end_year =   as.numeric(year(input$date[[2]]))
+      ) %>% plot_data()
+     
+     # Dismiss the modal
+     removeModal()  # Remove the modal after data generation
+      
+  })  
   
   output$plot1 <- renderPlot({ 
-    scrape_time_schedule_fn(
-      current_time_schedule_tbl_urls = preparation_output, 
-      prefix = input$selected_prefix,
-      start_year = as.numeric(year(input$date[[1]])),
-      end_year =   as.numeric(year(input$date[[2]]))
-      )[[1]]
+    req(plot_data()) 
+    plot_data()[[1]] 
+
   },
   height = 1500) 
   
   
   output$plot2 <- renderPlot({ 
-    scrape_time_schedule_fn(
-      current_time_schedule_tbl_urls = preparation_output, 
-      prefix = input$selected_prefix,
-      start_year = as.numeric(year(input$date[[1]])),
-      end_year =   as.numeric(year(input$date[[2]]))
-    )[[2]]
+    req(plot_data()) 
+    plot_data()[[2]] 
   },
   height = 1500) 
   
   
   output$plot3 <- renderPlot({ 
-    scrape_time_schedule_fn(
-      current_time_schedule_tbl_urls = preparation_output, 
-      prefix = input$selected_prefix,
-      start_year = as.numeric(year(input$date[[1]])),
-      end_year =   as.numeric(year(input$date[[2]]))
-    )[[3]]
+    req(plot_data()) 
+    plot_data()[[3]] 
   },
   height = 1500) 
   

@@ -5,7 +5,7 @@ account: ben-marwick
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13143446
-bundleId: 9275302
+bundleId: 9275549
 url: https://ben-marwick.shinyapps.io/uwtimescheduleViz/
 version: 1
 asMultiple: FALSE
